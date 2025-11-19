@@ -19,6 +19,7 @@
     <ProjectReference Include="..\SearchEngine.Application\SearchEngine.Application.csproj" />
     <ProjectReference Include="..\..\..\corepackages\Core.Persistence\Core.Persistence.csproj" />
     <ProjectReference Include="..\..\..\corepackages\Core.CrossCuttingConcerns\Core.CrossCuttingConcerns.csproj" />
+    <ProjectReference Include="..\SearchEngine.Infrastructure\SearchEngine.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

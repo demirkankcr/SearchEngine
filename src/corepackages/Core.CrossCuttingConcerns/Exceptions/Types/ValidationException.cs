@@ -1,9 +1,7 @@
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace Core.CrossCuttingConcerns.Exceptions.Types;
 
-[Serializable]
 public class ValidationException : Exception
 {
     public IEnumerable<ValidationExceptionModel> Errors { get; }
@@ -26,11 +24,6 @@ public class ValidationException : Exception
     public ValidationException(IEnumerable<ValidationExceptionModel> errors) : base(BuildErrorMessage(errors))
     {
         Errors = errors;
-    }
-
-    protected ValidationException(SerializationInfo info, StreamingContext context) : base(info, context)
-    {
-        Errors = Array.Empty<ValidationExceptionModel>();
     }
 
     private static string BuildErrorMessage(IEnumerable<ValidationExceptionModel> errors)
