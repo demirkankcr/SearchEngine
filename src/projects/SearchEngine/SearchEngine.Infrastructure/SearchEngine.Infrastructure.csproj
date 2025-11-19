@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SearchEngine.Application\SearchEngine.Application.csproj" />
     <ProjectReference Include="..\..\..\corepackages\Core.Domain\Core.Domain.csproj" />
+    <ProjectReference Include="..\..\..\corepackages\Core.Persistence\Core.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>
