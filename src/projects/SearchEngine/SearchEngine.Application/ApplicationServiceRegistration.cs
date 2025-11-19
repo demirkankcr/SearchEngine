@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using SearchEngine.Application.Common.Behaviors;
 using SearchEngine.Application.Services.ContentProviders;
+using SearchEngine.Application.Services.Scoring;
+using SearchEngine.Application.Services.Scoring.Strategies;
 using System.Reflection;
 
 namespace SearchEngine.Application;
@@ -20,6 +22,11 @@ public static class ApplicationServiceRegistration
         
         // memory leak riski olmasın request bittiğinde direk dispose edilsin diye scoped kullandım. ayrıca her bir request için için ayrı instance oluşturacak bundan dolayı da başka requestler geldiğinde karmaşıklıktan kurtulabilir ??
         services.AddScoped<IContentProviderFactory, ContentProviderFactory>();
+
+        // Scoring Services
+        services.AddScoped<IScoringService, ScoringService>();
+        services.AddTransient<VideoScoringStrategy>();
+        services.AddTransient<TextScoringStrategy>();
 
         return services;
     }
