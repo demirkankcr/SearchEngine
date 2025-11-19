@@ -2,7 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Polly;
 using Polly.Extensions.Http;
 using SearchEngine.Application.Services.ContentProviders;
+using SearchEngine.Infrastructure.Persistence.Repositories;
 using SearchEngine.Infrastructure.Services.ContentProviders;
+using SearchEngine.Application.Services.Repositories;
 
 namespace SearchEngine.Infrastructure;
 
@@ -24,6 +26,8 @@ public static class InfrastructureServiceRegistration
         // providerlerimizi buraya register ediyoruz yenisi geldiğinde sadece buraya eklemek yeterli olacak. mevcutu değiştirmemiş olucaz
         services.AddScoped<IContentProvider, JsonContentProvider>();
         services.AddScoped<IContentProvider, XmlContentProvider>();
+
+        services.AddScoped<IContentRepository, ContentRepository>();
 
         return services;
     }
