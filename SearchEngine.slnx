@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/projects/SearchEngine/SearchEngine.API/SearchEngine.API.csproj" />
+  <Project Path="src/projects/SearchEngine/SearchEngine.Domain/SearchEngine.Domain.csproj" />
+  <Project Path="src/projects/SearchEngine/SearchEngine.Application/SearchEngine.Application.csproj" />
+  <Project Path="src/projects/SearchEngine/SearchEngine.Infrastructure/SearchEngine.Infrastructure.csproj" />
+</Solution>
