@@ -1,6 +1,12 @@
 <Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/corepackages/">
+    <Project Path="src/corepackages/Core.Application/Core.Application.csproj" />
+    <Project Path="src/corepackages/Core.CrossCuttingConcerns/Core.CrossCuttingConcerns.csproj" />
+    <Project Path="src/corepackages/Core.Domain/Core.Domain.csproj" />
+    <Project Path="src/corepackages/Core.Persistence/Core.Persistence.csproj" />
+  </Folder>
   <Project Path="src/projects/SearchEngine/SearchEngine.API/SearchEngine.API.csproj" />
-  <Project Path="src/projects/SearchEngine/SearchEngine.Domain/SearchEngine.Domain.csproj" />
   <Project Path="src/projects/SearchEngine/SearchEngine.Application/SearchEngine.Application.csproj" />
   <Project Path="src/projects/SearchEngine/SearchEngine.Infrastructure/SearchEngine.Infrastructure.csproj" />
 </Solution>
