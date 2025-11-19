@@ -1,8 +1,5 @@
-using System.Runtime.Serialization;
-
 namespace Core.CrossCuttingConcerns.Exceptions.Types;
 
-[Serializable]
 public class BusinessException : Exception
 {
     public BusinessException()
@@ -14,10 +11,6 @@ public class BusinessException : Exception
     }
 
     public BusinessException(string? message, Exception? innerException) : base(message, innerException)
-    {
-    }
-
-    protected BusinessException(SerializationInfo info, StreamingContext context) : base(info, context)
     {
     }
 }

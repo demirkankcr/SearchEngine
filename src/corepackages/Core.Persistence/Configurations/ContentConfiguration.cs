@@ -14,15 +14,10 @@ public class ContentConfiguration : BaseConfiguration<Content, Guid>
         base.Configure(builder);
 
         builder.Property(x => x.Title).IsRequired().HasMaxLength(500).HasColumnName("Title");
-        builder.Property(x => x.Description).IsRequired(false).HasMaxLength(2000).HasColumnName("Description");
-        builder.Property(x => x.Url).IsRequired(false).HasMaxLength(1000).HasColumnName("Url");
-        
         builder.Property(x => x.ProviderId).IsRequired().HasMaxLength(100).HasColumnName("ProviderId");
         builder.Property(x => x.Source).IsRequired().HasMaxLength(50).HasColumnName("Source");
         builder.Property(x => x.PublishedDate).IsRequired().HasColumnName("PublishedDate");
-        
         builder.Property(x => x.Tags).HasColumnName("Tags");
-
         builder.Property(x => x.Score).HasColumnName("Score");
         builder.Property(x => x.BaseScore).HasColumnName("BaseScore");
         builder.Property(x => x.FreshnessScore).HasColumnName("FreshnessScore");
@@ -60,4 +55,3 @@ public class TextContentConfiguration : IEntityTypeConfiguration<TextContent>
         builder.Property(x => x.Comments).HasColumnName("Comments");
     }
 }
-

@@ -6,7 +6,10 @@
     <Project Path="src/corepackages/Core.Domain/Core.Domain.csproj" />
     <Project Path="src/corepackages/Core.Persistence/Core.Persistence.csproj" />
   </Folder>
-  <Project Path="src/projects/SearchEngine/SearchEngine.API/SearchEngine.API.csproj" />
-  <Project Path="src/projects/SearchEngine/SearchEngine.Application/SearchEngine.Application.csproj" />
-  <Project Path="src/projects/SearchEngine/SearchEngine.Infrastructure/SearchEngine.Infrastructure.csproj" />
+  <Folder Name="/src/projects/" />
+  <Folder Name="/src/projects/SearchEngine/">
+    <Project Path="src/projects/SearchEngine/SearchEngine.API/SearchEngine.API.csproj" />
+    <Project Path="src/projects/SearchEngine/SearchEngine.Application/SearchEngine.Application.csproj" />
+    <Project Path="src/projects/SearchEngine/SearchEngine.Infrastructure/SearchEngine.Infrastructure.csproj" />
+  </Folder>
 </Solution>
