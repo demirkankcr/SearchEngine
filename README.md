@@ -79,8 +79,6 @@ Hata yönetimi için global exception middleware kullanıldı, böylece API tuta
 
 ## İsterler
 
-## İsterler
-
 | İster (Gereksinim) | Projede Karşılanan Çözüm |
 |--------------------|---------------------------|
 | **Farklı provider’lardan veri alınmalı (JSON + XML)** | JSON ve XML için ayrı provider servisleri, ortak interface ve provider factory ile tüm provider’lar standart forma dönüştürülüyor. |
@@ -105,5 +103,3 @@ Hata yönetimi için global exception middleware kullanıldı, böylece API tuta
 - CrossCuttingConcers katmanında FluentValidation kolayca eklenebilir alt yapısı hazır
 -.Dashboard’a sync durumunu gösteren ufak bildirimler.
 - Log analizi için Grafana/Kibana entegrasyonu.
-
-
