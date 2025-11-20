@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
+using Polly.Bulkhead;
 using Polly.Extensions.Http;
 using SearchEngine.Application.Services.ContentProviders;
 using SearchEngine.Infrastructure.Persistence.Repositories;
@@ -19,11 +20,15 @@ public static class InfrastructureServiceRegistration
             .HandleTransientHttpError()
             .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 
+        var bulkheadPolicy = Policy.BulkheadAsync<HttpResponseMessage>(maxParallelization: 2, maxQueuingActions: 4);
+
         services.AddHttpClient<JsonContentProvider>()
-            .AddPolicyHandler(retryPolicy);
+            .AddPolicyHandler(retryPolicy)
+            .AddPolicyHandler(bulkheadPolicy);
 
         services.AddHttpClient<XmlContentProvider>()
-            .AddPolicyHandler(retryPolicy);
+            .AddPolicyHandler(retryPolicy)
+            .AddPolicyHandler(bulkheadPolicy);
 
         // providerlerimizi buraya register ediyoruz yenisi geldiğinde sadece buraya eklemek yeterli olacak. mevcutu değiştirmemiş olucaz
         services.AddScoped<IContentProvider, JsonContentProvider>();

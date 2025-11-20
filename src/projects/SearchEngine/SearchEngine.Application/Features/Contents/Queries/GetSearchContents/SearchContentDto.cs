@@ -18,6 +18,10 @@ public class SearchContentDto
     public double Score { get; set; }
     public ContentType ContentType { get; set; }
     
+    // Interactions
+    public int ViewCount { get; set; }
+    public int LikeCount { get; set; }
+    
     // conditional mapping
     public string? Duration { get; set; } // Video ise dolu
     public int ReadingTime { get; set; } // Text ise dolu

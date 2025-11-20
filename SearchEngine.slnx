@@ -11,5 +11,9 @@
     <Project Path="src/projects/SearchEngine/SearchEngine.API/SearchEngine.API.csproj" />
     <Project Path="src/projects/SearchEngine/SearchEngine.Application/SearchEngine.Application.csproj" />
     <Project Path="src/projects/SearchEngine/SearchEngine.Infrastructure/SearchEngine.Infrastructure.csproj" />
+    <Project Path="src/projects/SearchEngine/SearchEngine.UI/SearchEngine.UI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SearchEngine.Application.Tests/SearchEngine.Application.Tests.csproj" />
   </Folder>
 </Solution>

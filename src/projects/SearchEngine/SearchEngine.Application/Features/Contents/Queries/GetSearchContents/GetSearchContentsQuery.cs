@@ -2,9 +2,14 @@ using AutoMapper;
 using Core.Application.Pipelines.Caching;
 using Core.Domain.ComplexTypes.Enums;
 using Core.Domain.Entities;
+using Core.Persistence.Dynamic;
 using Core.Persistence.Paging;
 using MediatR;
 using SearchEngine.Application.Services.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 
 namespace SearchEngine.Application.Features.Contents.Queries.GetSearchContents;
 
@@ -14,6 +19,7 @@ public class GetSearchContentsQuery : IRequest<IPaginate<SearchContentDto>>, ICa
     public string? Keyword { get; set; }
     public ContentType? ContentType { get; set; }
     public string? SortBy { get; set; }
+    public DynamicQuery? DynamicQuery { get; set; }
     public int Page { get; set; } = 0;
     public int PageSize { get; set; } = 10;
     // parametreler değiştikçe key de değişir, böylece her filtre kombinasyonu ayrı cache'lenir.
@@ -35,51 +41,96 @@ public class GetSearchContentsQueryHandler : IRequestHandler<GetSearchContentsQu
 
     public async Task<IPaginate<SearchContentDto>> Handle(GetSearchContentsQuery request, CancellationToken cancellationToken)
     {
-        IPaginate<Content> contents;
+        ArgumentNullException.ThrowIfNull(request);
+        var normalizedRequest = NormalizeRequest(request);
+        var dynamicQuery = BuildDynamicQuery(normalizedRequest);
 
-        /*
-        // TODO: Dynamic filtering and sorting
-        if (request.DynamicQuery != null && (!string.IsNullOrEmpty(request.DynamicQuery.Sort) || !string.IsNullOrEmpty(request.DynamicQuery.Filter)))
-        {
-             contents = await _contentRepository.GetListByDynamicAsync(
-                request.DynamicQuery,
-                index: request.Page,
-                size: request.PageSize,
-                cancellationToken: cancellationToken
-            );
-        }
-        else
-        */
-        {
-            contents = await _contentRepository.GetListAsync(
-                predicate: x => 
-                    (string.IsNullOrEmpty(request.Keyword) || x.Title.ToLower().Contains(request.Keyword.ToLower())) &&
-                    (!request.ContentType.HasValue || x.ContentType == request.ContentType),
-                orderBy: q =>
-                {
-                    return request.SortBy?.ToLower() switch
-                    {
-                        "scoredesc" => q.OrderByDescending(x => x.Score),
-                        "scoreasc" => q.OrderBy(x => x.Score),
-                        "datedesc" => q.OrderByDescending(x => x.PublishedDate),
-                        "dateasc" => q.OrderBy(x => x.PublishedDate),
-                        _ => q.OrderByDescending(x => x.Score)
-                    };
-                },
-                index: request.Page,
-                size: request.PageSize,
-                cancellationToken: cancellationToken
-            );
-        }
+        var contents = await _contentRepository.GetListByDynamicAsync(
+            dynamicQuery,
+            index: normalizedRequest.Page,
+            size: normalizedRequest.PageSize,
+            cancellationToken: cancellationToken
+        );
 
-        // DTO Transformation:
-        // AutoMapper'ın generic interface mapping sorununu aşmak için manuel wrapper oluşturuyoruz.
-        // 1. İçerik listesini DTO listesine çevir
         var dtoList = _mapper.Map<IList<SearchContentDto>>(contents.Items);
-        
-        // 2. Paginate wrapper içine koy
-        var mappedContents = new Paginate<SearchContentDto>(dtoList);
-        
-        return mappedContents;
+        return new Paginate<SearchContentDto>(dtoList, contents.Index, contents.Size, contents.Count);
+    }
+
+    private static GetSearchContentsQuery NormalizeRequest(GetSearchContentsQuery request)
+    {
+        request.Keyword = string.IsNullOrWhiteSpace(request.Keyword)
+            ? null
+            : request.Keyword.Trim();
+
+        request.SortBy = string.IsNullOrWhiteSpace(request.SortBy)
+            ? null
+            : request.SortBy.Trim();
+
+        if (request.Page < 0) request.Page = 0;
+        if (request.PageSize <= 0) request.PageSize = 10;
+
+        return request;
+    }
+
+    private static DynamicQuery BuildDynamicQuery(GetSearchContentsQuery request)
+    {
+        var dynamicQuery = request.DynamicQuery ?? new DynamicQuery();
+
+        if (string.IsNullOrWhiteSpace(dynamicQuery.Filter))
+        {
+            dynamicQuery.Filter = BuildFilterExpression(request);
+        }
+
+        if (string.IsNullOrWhiteSpace(dynamicQuery.Sort))
+        {
+            dynamicQuery.Sort = ResolveSortExpression(request.SortBy);
+        }
+
+        return dynamicQuery;
+    }
+
+    private static string? BuildFilterExpression(GetSearchContentsQuery request)
+    {
+        var filters = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(request.Keyword))
+        {
+            var sanitizedKeyword = SanitizeLiteral(request.Keyword);
+            filters.Add($"Title.ToLower().Contains(\"{sanitizedKeyword.ToLower(CultureInfo.InvariantCulture)}\")");
+        }
+
+        if (request.ContentType.HasValue)
+        {
+            filters.Add($"ContentType == {(int)request.ContentType.Value}");
+        }
+
+        return filters.Count == 0 ? null : string.Join(" && ", filters);
+    }
+
+    private static string ResolveSortExpression(string? sortBy)
+    {
+        return sortBy?.ToLower(CultureInfo.InvariantCulture) switch
+        {
+            "scoreasc" => "Score ascending",
+            "scoredesc" => "Score descending",
+            "datedesc" => "PublishedDate descending",
+            "dateasc" => "PublishedDate ascending",
+            _ => "Score descending"
+        };
+    }
+
+    private static string SanitizeLiteral(string value)
+    {
+        var builder = new StringBuilder(value.Length);
+        foreach (var ch in value)
+        {
+            builder.Append(ch switch
+            {
+                '\"' => "\\\"",
+                '\\' => "\\\\",
+                _ => ch.ToString()
+            });
+        }
+        return builder.ToString();
     }
 }

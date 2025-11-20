@@ -62,8 +62,12 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
         if (!enableTracking) queryable = queryable.AsNoTracking();
         if (include != null) queryable = include(queryable);
         if (predicate != null) queryable = queryable.Where(predicate);
-        if (orderBy != null) return new Paginate<TEntity>(await orderBy(queryable).Skip(index * size).Take(size).ToListAsync(cancellationToken));
-        return new Paginate<TEntity>(await queryable.Skip(index * size).Take(size).ToListAsync(cancellationToken));
+
+        var totalCount = await queryable.CountAsync(cancellationToken);
+        var orderedQueryable = orderBy != null ? orderBy(queryable) : queryable;
+        var items = await orderedQueryable.Skip(index * size).Take(size).ToListAsync(cancellationToken);
+
+        return new Paginate<TEntity>(items, index, size, totalCount);
     }
 
     public async Task<IPaginate<TEntity>> GetListByDynamicAsync(DynamicQuery dynamic, Expression<Func<TEntity, bool>>? predicate = null, Func<IQueryable<TEntity>, IIncludableQueryable<TEntity, object>>? include = null, int index = 0, int size = 10, bool withDeleted = false, bool enableTracking = true, CancellationToken cancellationToken = default)
@@ -82,9 +86,10 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
             queryable = queryable.OrderBy(dynamic.Sort); 
 
         // Pagination
+        var totalCount = await queryable.CountAsync(cancellationToken);
         var items = await queryable.Skip(index * size).Take(size).ToDynamicListAsync<TEntity>(cancellationToken);
 
-        return new Paginate<TEntity>(items);
+        return new Paginate<TEntity>(items, index, size, totalCount);
     }
 
     public async Task<TEntity> UpdateAsync(TEntity entity)
