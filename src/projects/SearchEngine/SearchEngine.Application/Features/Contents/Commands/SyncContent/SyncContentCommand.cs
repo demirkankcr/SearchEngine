@@ -1,3 +1,4 @@
+using Core.CrossCuttingConcerns.Caching;
 using Core.Domain.Entities;
 using MediatR;
 using SearchEngine.Application.Services.ContentProviders;
@@ -17,15 +18,18 @@ public class SyncContentCommandHandler : IRequestHandler<SyncContentCommand, boo
     private readonly IContentProviderFactory _contentProviderFactory;
     private readonly IScoringService _scoringService;
     private readonly IContentRepository _contentRepository;
+    private readonly ICacheService _cacheService;
 
     public SyncContentCommandHandler(
         IContentProviderFactory contentProviderFactory,
         IScoringService scoringService,
-        IContentRepository contentRepository)
+        IContentRepository contentRepository,
+        ICacheService cacheService)
     {
         _contentProviderFactory = contentProviderFactory;
         _scoringService = scoringService;
         _contentRepository = contentRepository;
+        _cacheService = cacheService;
     }
 
     public async Task<bool> Handle(SyncContentCommand request, CancellationToken cancellationToken)
@@ -84,6 +88,8 @@ public class SyncContentCommandHandler : IRequestHandler<SyncContentCommand, boo
                 Console.WriteLine($"Error syncing provider: {ex.Message}");
             }
         }
+
+        _cacheService.RemoveByPattern(@"^SearchContents\(");
 
         return true;
     }
