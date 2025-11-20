@@ -10,7 +10,7 @@ var baseUrl = apiSettings.GetValue<string>("BaseUrl");
 // Named Client for Search API
 builder.Services.AddHttpClient("SearchApi", client =>
 {
-    client.BaseAddress = new Uri(baseUrl ?? "https://localhost:5103");
+    client.BaseAddress = new Uri(baseUrl ?? "http://localhost:5103");
 })
 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 {
