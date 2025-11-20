@@ -4,6 +4,7 @@ using SearchEngine.Application.Common.Behaviors;
 using SearchEngine.Application.Services.ContentProviders;
 using SearchEngine.Application.Services.Scoring;
 using SearchEngine.Application.Services.Scoring.Strategies;
+using Core.Application.Pipelines.Caching;
 using System.Reflection;
 
 namespace SearchEngine.Application;
@@ -15,6 +16,7 @@ public static class ApplicationServiceRegistration
         services.AddAutoMapper(typeof(ApplicationServiceRegistration), typeof(Core.CrossCuttingConcerns.Logging.DbLog.Profiles.DbLogProfile));
         services.AddMediatR(Assembly.GetExecutingAssembly());
         
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(CachingBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(Core.Application.Pipelines.DbLogging.DbLoggingBehavior<,>));
 

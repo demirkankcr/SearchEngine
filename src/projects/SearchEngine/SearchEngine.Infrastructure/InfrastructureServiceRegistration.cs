@@ -5,6 +5,8 @@ using SearchEngine.Application.Services.ContentProviders;
 using SearchEngine.Infrastructure.Persistence.Repositories;
 using SearchEngine.Infrastructure.Services.ContentProviders;
 using SearchEngine.Application.Services.Repositories;
+using Core.CrossCuttingConcerns.Caching;
+using Core.CrossCuttingConcerns.Caching.Microsoft;
 
 namespace SearchEngine.Infrastructure;
 
@@ -28,6 +30,10 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IContentProvider, XmlContentProvider>();
 
         services.AddScoped<IContentRepository, ContentRepository>();
+
+        //caching
+        services.AddMemoryCache();
+        services.AddSingleton<ICacheService, MemoryCacheManager>();
 
         return services;
     }
