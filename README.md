@@ -95,8 +95,7 @@ curl -X POST "http://localhost:5000/api/contents/sync" -H "accept: */*" -d ""
 
 ## Teknoloji Tercihleri
 
-1. **.NET 8 & Clean Architecture** – Katmanlı yapı + MediatR ile büyürken kodu dağıtmadan ilerledim. Böyle bir proje için biraz fazla karmaşık yapı olabilir ama hem ölçeklenebilir bir yapı istenmesi hem de 
-genel olarak kendi projelerimde kullanmak üzere oluşturduğum clean architecture templatesi olduğu için daha rahat bir biçimde geliştirme sağlamış oldum.
+1. **.NET 8 & Clean Architecture** – Aslında projeye en güncel LTS sürümü olan .NET 10 ile başlamayı düşündüm ancak kullandığım bazı 3. parti kütüphanelerin (örn: Swagger) henüz tam uyumlu olmaması sebebiyle,.net 8 lts sürümü ile ilerledim. Katmanlı yapı + MediatR ile büyürken kodu dağıtmadan, sürdürülebilir bir temel attım
 2. **EF Core 8 & PostgreSQL** – Table Per Hierarchy (TPH) inheritance pattern ile Content, TextContent ve VideoContent entity'leri tek tabloda tutuluyor. Bu yaklaşım, ortak alanların tekrarlanmasını önler ve polimorfik sorguları basitleştirir. Hangfire background job'ları da aynı veritabanını kullanarak ekstra altyapı gereksinimini ortadan kaldırıyor.
 3. **MediatR Pipeline Behaviors** – Caching, validation, logging gibi işler handler içine gömülmedi; AOP mantığıyla ilerledim. Cross-cutting işlerin tek merkezden yönetilmesi kod tekrarını bitiriyor; decorator tabanlı alternatiflere göre daha okunabilir.
 4. **Polly (Retry + Bulkhead)** – Provider API’leri 500/timeout verdiğinde otomatik retry ve eşzamanlı istek limiti var. Polly .NET ekosistemine en iyi entegre resiliency kütüphanesi; custom retry mekanizması yazmaya göre çok daha güvenilir ve test edilebilir.
@@ -125,7 +124,8 @@ genel olarak kendi projelerimde kullanmak üzere oluşturduğum clean architectu
 ## Dashboard & Testler
 
 - `SearchEngine.UI`: HttpClient ile API’ye bağlanan, keyword/tür/sort filtreleri ve sayfalama sunan tek sayfa.
-- Testler: Scoring stratejileri, ContentProviderFactory, GetSearchContents handler’ı için unit/handler senaryoları hazır.
+- **Unit Tests:** Scoring stratejileri, ContentProviderFactory, GetSearchContents handler’ı için xUnit testleri.
+- **Redis Serialization Tests:** Redis’e atılan verinin (Interface/Concrete class) doğru serialize/deserialize edildiğini garantileyen özel testler eklendi. (500 hatalarını önlemek için).
 
 ---
 
