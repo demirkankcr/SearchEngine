@@ -65,10 +65,10 @@ public class VideoScoringStrategyTests
     }
 
     [Theory]
-    [InlineData(2, 5)]  
-    [InlineData(20, 3)] 
-    [InlineData(60, 1)] 
-    [InlineData(100, 0)] 
+    [InlineData(2, 5)]
+    [InlineData(20, 3)]
+    [InlineData(60, 1)]
+    [InlineData(100, 0)]
     public void CalculateScore_ShouldApplyCorrectRecencyBonus(int daysAgo, double expectedBonus)
     {
         // Arrange
@@ -79,7 +79,7 @@ public class VideoScoringStrategyTests
             ProviderId = "provider-1",
             Source = "source-1",
             PublishedDate = DateTime.UtcNow.AddDays(-daysAgo),
-            Views = 0, 
+            Views = 0,
             Likes = 0,
             Duration = "01:00"
         };

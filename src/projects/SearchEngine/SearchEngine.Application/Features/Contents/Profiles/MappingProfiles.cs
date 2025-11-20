@@ -15,8 +15,8 @@ public class MappingProfiles : Profile
             .ForMember(dest => dest.ReadingTime, opt => opt.MapFrom(src => src is TextContent ? ((TextContent)src).ReadingTime : 0))
             // Map Interactions
             .ForMember(dest => dest.ViewCount, opt => opt.MapFrom(src => src is VideoContent ? (int)((VideoContent)src).Views : 0))
-            .ForMember(dest => dest.LikeCount, opt => opt.MapFrom(src => 
-                src is VideoContent ? ((VideoContent)src).Likes : 
+            .ForMember(dest => dest.LikeCount, opt => opt.MapFrom(src =>
+                src is VideoContent ? ((VideoContent)src).Likes :
                 src is TextContent ? ((TextContent)src).Reactions : 0));
     }
 }

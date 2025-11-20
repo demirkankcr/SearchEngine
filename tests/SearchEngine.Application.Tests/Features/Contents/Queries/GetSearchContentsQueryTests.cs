@@ -36,7 +36,7 @@ public class GetSearchContentsQueryTests
         };
 
         var emptyPaginate = new Paginate<Content>(new List<Content>(), 0, 10, 0);
-        
+
         _mockRepository.Setup(r => r.GetListByDynamicAsync(
             It.IsAny<DynamicQuery>(),
             It.IsAny<Expression<Func<Content, bool>>>(),
@@ -59,10 +59,10 @@ public class GetSearchContentsQueryTests
             It.IsAny<DynamicQuery>(),
             It.IsAny<Expression<Func<Content, bool>>>(),
             It.IsAny<Func<IQueryable<Content>, IIncludableQueryable<Content, object>>>(),
-            0, 
-            10, 
-            false, 
-            true, 
+            0,
+            10,
+            false,
+            true,
             It.IsAny<CancellationToken>()
         ), Times.Once);
     }
@@ -80,8 +80,8 @@ public class GetSearchContentsQueryTests
         var emptyPaginate = new Paginate<Content>(new List<Content>(), 0, 10, 0);
 
         _mockRepository.Setup(r => r.GetListByDynamicAsync(
-            It.Is<DynamicQuery>(dq => 
-                dq.Filter.Contains("Title.ToLower().Contains(\"test\")") && 
+            It.Is<DynamicQuery>(dq =>
+                dq.Filter.Contains("Title.ToLower().Contains(\"test\")") &&
                 dq.Filter.Contains("ContentType == 1")
             ),
             It.IsAny<Expression<Func<Content, bool>>>(),
@@ -109,11 +109,11 @@ public class GetSearchContentsQueryTests
     {
         // Arrange
         var query = new GetSearchContentsQuery();
-        
-        var contents = new List<Content> 
-        { 
-            new VideoContent { Title = "V1", Duration="00:00", ProviderId="p", Source="s" }, 
-            new TextContent { Title = "T1", ProviderId="p", Source="s" } 
+
+        var contents = new List<Content>
+        {
+            new VideoContent { Title = "V1", Duration="00:00", ProviderId="p", Source="s" },
+            new TextContent { Title = "T1", ProviderId="p", Source="s" }
         };
         var paginatedContent = new Paginate<Content>(contents, 0, 10, 50); // Total 50 items
 

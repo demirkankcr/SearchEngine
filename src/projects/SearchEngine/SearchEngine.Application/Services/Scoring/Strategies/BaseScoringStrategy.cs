@@ -17,7 +17,7 @@ public abstract class BaseScoringStrategy : IScoringStrategy
         content.BaseScore = baseScore;
         content.FreshnessScore = freshnessScore;
         content.InteractionScore = interactionScore;
-        
+
         var finalScore = (baseScore * contentTypeMultiplier) + freshnessScore + interactionScore;
         content.Score = finalScore;
 

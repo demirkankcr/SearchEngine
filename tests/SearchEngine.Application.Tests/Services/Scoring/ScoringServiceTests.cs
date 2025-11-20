@@ -21,16 +21,16 @@ public class ScoringServiceTests
     public void CalculateScore_ShouldUseVideoStrategy_ForVideoContent()
     {
         // Arrange
-        var video = new VideoContent 
-        { 
-            Id = Guid.NewGuid(), 
-            Title = "Video", 
-            ProviderId = "p1", 
-            Source = "s1", 
-            Duration="05:00",
+        var video = new VideoContent
+        {
+            Id = Guid.NewGuid(),
+            Title = "Video",
+            ProviderId = "p1",
+            Source = "s1",
+            Duration = "05:00",
             Views = 1000,
             Likes = 100,
-            PublishedDate = DateTime.UtcNow 
+            PublishedDate = DateTime.UtcNow
         };
 
         // Act
@@ -49,12 +49,12 @@ public class ScoringServiceTests
     public void CalculateScore_ShouldUseTextStrategy_ForTextContent()
     {
         // Arrange
-        var text = new TextContent 
-        { 
-            Id = Guid.NewGuid(), 
-            Title = "Text", 
-            ProviderId = "p1", 
-            Source = "s1", 
+        var text = new TextContent
+        {
+            Id = Guid.NewGuid(),
+            Title = "Text",
+            ProviderId = "p1",
+            Source = "s1",
             ReadingTime = 10,
             Reactions = 50,
             PublishedDate = DateTime.UtcNow

@@ -13,7 +13,7 @@ public class ContentProviderFactoryTests
         var provider1 = new Mock<IContentProvider>();
         var provider2 = new Mock<IContentProvider>();
         var providers = new List<IContentProvider> { provider1.Object, provider2.Object };
-        
+
         var factory = new ContentProviderFactory(providers);
 
         // Act

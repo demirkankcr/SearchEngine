@@ -18,7 +18,7 @@ public class SearchViewModel
     public int To => Results.Count == 0 ? 0 : Math.Min(TotalCount, From + Results.Count - 1);
     public bool HasNext => ResponseHasNext;
     public bool HasPrevious => ResponseHasPrevious;
-   
+
     public List<SearchContentViewModel> Results { get; set; } = new();
 }
 

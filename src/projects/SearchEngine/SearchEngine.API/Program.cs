@@ -69,9 +69,9 @@ app.UseHangfireDashboard();
 var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
 
 recurringJobManager.AddOrUpdate<ContentSyncJob>(
-    "sync-contents-job", 
-    job => job.ExecuteAsync(), 
-    Cron.Minutely); 
+    "sync-contents-job",
+    job => job.ExecuteAsync(),
+    Cron.Minutely);
 
 app.MapControllers();
 
