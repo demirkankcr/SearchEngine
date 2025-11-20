@@ -27,6 +27,10 @@ builder.Services.AddCustomRateLimiting();
 
 var app = builder.Build();
 
+// --- Startup Tasks ---
+// Apply database migrations automatically
+app.ApplyMigrations();
+
 // --- Middleware Pipeline ---
 
 if (app.Environment.IsDevelopment())
