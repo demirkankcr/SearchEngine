@@ -19,6 +19,39 @@ docker-compose up -d
 - Docker üzerinde api projesi ilk ayağa kalktığında veya uygulanmamış migration olduğunda migration'lar otomatik uygulanır. Hem Hangfire Hem Content için (manuel dotnet ef database update gerekmez)
 - Tüm servisler (PostgreSQL, Redis, ElasticSearch, API, UI) otomatik başlar
 
+---
+
+## 📐 Proje Mimarisi ve İşleyiş (End-to-End Flow)
+
+### 1. Veri Toplama (Ingestion) & Resilience
+Sistem, farklı formatlardaki (JSON, XML) dış kaynaklardan veri çeker.
+- **`ContentProviderFactory` (Factory Pattern):** Hangi provider'dan istek yapılacağını dinamik olarak belirler. Kod içinde `if-else` karmaşası yerine temiz bir nesne üretimi sağlar.
+- **`Polly` (Resilience):** Dış servisler cevap vermezse veya hata fırlatırsa, sistem çökmez; Retry Policy ile belirli aralıklarla tekrar dener. Eğer servis tamamen çökmüşse Circuit Breaker devreye girer ve sistemi korur.
+- **Standardizasyon:** Gelen ham veri (raw data), ortak bir `Content` modeline (Video veya Text) dönüştürülür.
+
+### 2. Puanlama (Scoring) & Strategy Pattern
+Veriler veritabanına yazılmadan önce esnek bir puanlama motorundan geçer.
+- **`Strategy Pattern`**: Puanlama mantığı `IScoringStrategy` interface'i üzerinden soyutlanmıştır. `VideoScoringStrategy` ve `TextScoringStrategy` sınıfları farklı algoritmalar çalıştırır.
+- **Avantajı:** Yarın "Podcast" diye yeni bir içerik türü gelirse, sadece yeni bir strateji sınıfı yazmak yeterlidir; ana kodu değiştirmeye gerek kalmaz (**Open/Closed Principle**).
+- **Formül:** `(Temel Puan * Katsayı) + Güncellik + Etkileşim` hesaplanır.
+
+### 3. Veri Saklama & Otomasyon (Persistence & Background Jobs)
+- **PostgreSQL & EF Core:** Puanlanmış ve standardize edilmiş veri veritabanına "Upsert" (varsa güncelle, yoksa ekle) mantığıyla kaydedilir. **TPH (Table Per Hierarchy)** deseni kullanılarak tüm içerik tipleri performanslı bir şekilde tek tabloda tutulur.
+- **Hangfire (Zamanlanmış Görevler):** 
+  - **Sıklık:** Her dakika (`Cron.Minutely`) çalışan bir job vardır.
+  - **Görevi:** Otomatik olarak provider'ları tarar, yeni içerik varsa çeker ve veritabanını günceller.
+  - **Cache Temizliği:** Job başarıyla biterse, Redis'teki eski arama sonuçlarını siler.
+
+### 4. Arama ve Sunum (Serving) & Caching
+Kullanıcı API veya Dashboard üzerinden arama yaptığında:
+1. **Redis (Distributed Cache):** Önce Redis'e bakar.
+   - **HIT:** Direkt cache'den döner
+   - **MISS:** Veritabanına gider, sonucu bulur ve Redis'e yazar.
+   - **Verimlilik:** Eğer provider'lardan yeni veri gelmediyse, 60 dakika boyunca DB'ye hiç yük bindirmeden aynı veriyi Redis'ten döneriz.
+2. **Dashboard (UI):** API'den gelen bu veriyi Bootstrap ile hazırlanmış kullanıcı dostu bir tabloda gösterir.
+
+---
+
 ## API Dokümantasyonu
 İki endpoint için hem swagger hem dashboard üzerinden kontrolü sağlabilir. Alternatif olarak Postman, cURL gibi araçlarla da test edebilirsiniz.
 
@@ -60,60 +93,18 @@ curl -X POST "http://localhost:5000/api/contents/sync" -H "accept: */*" -d ""
 
 ---
 
-## 📐 Proje Mimarisi ve İşleyiş (End-to-End Flow)
-
-Proje, veriyi dış dünyadan alıp son kullanıcıya sunana kadar 4 ana aşamadan geçer.
-
-### 1. Veri Toplama (Ingestion) & Resilience
-Sistem, farklı formatlardaki (JSON, XML) dış kaynaklardan (Provider) veri çeker.
-- **`ContentProviderFactory` (Factory Pattern):** Hangi provider'dan (JSON/XML) istek yapılacağını dinamik olarak belirler. Kod içinde `if-else` karmaşası yerine temiz bir nesne üretimi sağlar.
-- **`Polly` (Resilience):** Dış servisler cevap vermezse veya hata fırlatırsa, sistem çökmez; **Retry Policy** ile belirli aralıklarla tekrar dener. Eğer servis tamamen çökmüşse **Circuit Breaker** devreye girer ve sistemi korur.
-- **Standardizasyon:** Gelen ham veri (raw data), ortak bir `Content` modeline (Video veya Text) dönüştürülür.
-
-### 2. Puanlama (Scoring) & Strategy Pattern
-Veriler veritabanına yazılmadan önce esnek bir puanlama motorundan geçer.
-- **`Strategy Pattern`**: Puanlama mantığı `IScoringStrategy` interface'i üzerinden soyutlanmıştır. `VideoScoringStrategy` ve `TextScoringStrategy` sınıfları farklı algoritmalar çalıştırır.
-- **Avantajı:** Yarın "Podcast" diye yeni bir içerik türü gelirse, sadece yeni bir strateji sınıfı yazmak yeterlidir; ana kodu değiştirmeye gerek kalmaz (**Open/Closed Principle**).
-- **Formül:** `(Temel Puan * Katsayı) + Güncellik + Etkileşim` hesaplanır.
-
-### 3. Veri Saklama & Otomasyon (Persistence & Background Jobs)
-- **PostgreSQL & EF Core:** Puanlanmış ve standardize edilmiş veri veritabanına "Upsert" (varsa güncelle, yoksa ekle) mantığıyla kaydedilir. **TPH (Table Per Hierarchy)** deseni kullanılarak tüm içerik tipleri performanslı bir şekilde tek tabloda tutulur.
-- **Hangfire (Zamanlanmış Görevler):** 
-  - **Sıklık:** Her dakika (`Cron.Minutely`) çalışan bir job vardır.
-  - **Görevi:** Otomatik olarak provider'ları tarar, yeni içerik varsa çeker ve veritabanını günceller.
-  - **Cache Temizliği:** Job başarıyla biterse, Redis'teki eski arama sonuçlarını siler.
-
-### 4. Arama ve Sunum (Serving) & Caching
-Kullanıcı API veya Dashboard üzerinden arama yaptığında:
-1. **Redis (Distributed Cache):** Önce Redis'e bakar.
-   - **HIT:** Direkt cache'den döner (Milisaniyeler sürer).
-   - **MISS:** Veritabanına gider, sonucu bulur ve Redis'e yazar.
-   - **Verimlilik:** Eğer provider'lardan yeni veri gelmediyse, 60 dakika boyunca DB'ye hiç yük bindirmeden aynı veriyi Redis'ten döneriz.
-2. **Dashboard (UI):** API'den gelen bu veriyi Bootstrap ile hazırlanmış kullanıcı dostu bir tabloda gösterir.
-
----
-
-## Teknoloji Tercihleri (neden böyle?)
+## Teknoloji Tercihleri
 
 1. **.NET 8 & Clean Architecture** – Katmanlı yapı + MediatR ile büyürken kodu dağıtmadan ilerledim. Böyle bir proje için biraz fazla karmaşık yapı olabilir ama hem ölçeklenebilir bir yapı istenmesi hem de 
 genel olarak kendi projelerimde kullanmak üzere oluşturduğum clean architecture templatesi olduğu için daha rahat bir biçimde geliştirme sağlamış oldum.
-
 2. **EF Core 8 & PostgreSQL** – Table Per Hierarchy (TPH) inheritance pattern ile Content, TextContent ve VideoContent entity'leri tek tabloda tutuluyor. Bu yaklaşım, ortak alanların tekrarlanmasını önler ve polimorfik sorguları basitleştirir. Hangfire background job'ları da aynı veritabanını kullanarak ekstra altyapı gereksinimini ortadan kaldırıyor.
-
 3. **MediatR Pipeline Behaviors** – Caching, validation, logging gibi işler handler içine gömülmedi; AOP mantığıyla ilerledim. Cross-cutting işlerin tek merkezden yönetilmesi kod tekrarını bitiriyor; decorator tabanlı alternatiflere göre daha okunabilir.
-
 4. **Polly (Retry + Bulkhead)** – Provider API’leri 500/timeout verdiğinde otomatik retry ve eşzamanlı istek limiti var. Polly .NET ekosistemine en iyi entegre resiliency kütüphanesi; custom retry mekanizması yazmaya göre çok daha güvenilir ve test edilebilir.
-
 5. **Hangfire** – Sync komutunu planlı çalıştırıp dashboard’dan takip edebilmek için.
-
 6. **Redis + ICacheService (Fallback: MemoryCache)** – Redis cache entegrasyonu yapıldı; Redis kapalıysa veya bağlanamazsa otomatik olarak MemoryCache'e fallback yapıyor. ICacheService interface'i sayesinde cache implementasyonu değişikliği tek konfigürasyonla yönetiliyor. Search için ElasticSearch kullanmak bu proje kapsamında overengineering olurdu; mevcut veri hacmi ve arama gereksinimleri için PostgreSQL'in full-text search özellikleri yeterli. ElasticSearch eklemek hem docker configlerinin karmaşıklaşmasına hem de development/değerlendirme süreçlerinde gereksiz yavaşlığa sebep olacaktır.
-
 7. **AutoMapper & FluentValidation** – DTO/Entity dönüşümleri ve request kontrolleri tekrar eden kod yazdırmıyor.
-
 8. **Serilog (PostgreSQL sink)** – API ve job loglarını tek yerde topladım.
-
 9. **ASP.NET Core MVC + Bootstrap 5** – Dashboard’u ince istemci yaptım; sadece API tüketip tablo render ediyor. Ayrı bir react projesi yapmak daha mantıklı olurda fakat yine proje çok dallanacağı ve node paketleri devreye gireceği için basit işlevsen bir mvc yaptım.
-
 10. **xUnit & Moq** – Scoring ve provider senaryolarını güvence altına almak için standart test ekosistemi.
 
 ---
@@ -137,8 +128,6 @@ genel olarak kendi projelerimde kullanmak üzere oluşturduğum clean architectu
 - Testler: Scoring stratejileri, ContentProviderFactory, GetSearchContents handler’ı için unit/handler senaryoları hazır.
 
 ---
-
-
 
 ## İsterler
 
