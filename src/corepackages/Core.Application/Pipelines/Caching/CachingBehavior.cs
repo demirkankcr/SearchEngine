@@ -40,11 +40,11 @@ public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
 
         //miss execute business
         var response = await next();
-        
+
         // kullanılmayan veriler cacheden silinir sık kullananaların ömrü uzar Memory management için
         TimeSpan? slidingExpiration = request.SlidingExpiration;
         int cacheDuration = 10; //parametre tablosundan okunmalı
-        
+
         if (response != null)
         {
             _cacheService.Add(request.CacheKey, response, slidingExpiration ?? TimeSpan.FromMinutes(cacheDuration));

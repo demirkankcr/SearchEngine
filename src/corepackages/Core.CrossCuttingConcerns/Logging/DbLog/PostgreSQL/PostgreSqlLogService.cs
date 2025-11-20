@@ -22,7 +22,7 @@ public class PostgreSqlLogService : ILogService
         // Her log işleminde yeni context oluşturuyoruz (Scope yönetimi için)
         var optionsBuilder = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<LogDbContext>();
         using var context = new LogDbContext(optionsBuilder.Options, _configuration);
-        
+
         var log = _mapper.Map<Log>(logDto);
         context.Logs.Add(log);
         await context.SaveChangesAsync();

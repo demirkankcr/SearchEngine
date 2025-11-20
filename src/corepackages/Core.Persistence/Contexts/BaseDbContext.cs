@@ -22,12 +22,12 @@ public class BaseDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-        
+
         // Core.Domain assembly'sindeki Entity'leri register et
         var domainAssembly = typeof(Entity<Guid>).Assembly;
         modelBuilder.RegisterAllEntities<Entity<Guid>>(domainAssembly);
         modelBuilder.RegisterAllConfigurations(domainAssembly);
-        
+
         // Core.Persistence assembly'sindeki configuration'ları register et
         modelBuilder.RegisterAllConfigurations(Assembly.GetExecutingAssembly());
     }

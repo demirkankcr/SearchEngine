@@ -12,7 +12,7 @@ public static class HangfireServiceRegistration
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-        services.AddHangfire(config =>  
+        services.AddHangfire(config =>
             config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                   .UseSimpleAssemblyNameTypeSerializer()
                   .UseRecommendedSerializerSettings()

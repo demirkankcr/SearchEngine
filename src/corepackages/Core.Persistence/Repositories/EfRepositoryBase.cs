@@ -79,11 +79,11 @@ public class EfRepositoryBase<TEntity, TEntityId, TContext> : IAsyncRepository<T
 
         // Dynamic Filtering
         if (dynamic.Filter != null && !string.IsNullOrEmpty(dynamic.Filter))
-            queryable = queryable.Where(dynamic.Filter); 
+            queryable = queryable.Where(dynamic.Filter);
 
         // Dynamic Sorting
         if (dynamic.Sort != null && !string.IsNullOrEmpty(dynamic.Sort))
-            queryable = queryable.OrderBy(dynamic.Sort); 
+            queryable = queryable.OrderBy(dynamic.Sort);
 
         // Pagination
         var totalCount = await queryable.CountAsync(cancellationToken);
