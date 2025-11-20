@@ -12,6 +12,7 @@ docker-compose up -d
 - ✅ **API & Swagger:** http://localhost:5000/swagger
 - ✅ **Dashboard UI:** http://localhost:5001
 - ✅ **Hangfire:** http://localhost:5000/hangfire
+- ✅ **Redis:** `localhost:6379` (Arayüz yok, Redis Commander ile yönetilebilir)
 - ✅ **Redis Commander:** http://localhost:8081
 - 🟡 **ElasticSearch:** http://localhost:9200 (Konteyner hazır, proje büyüdüğünde aktif edilebilir)
 
@@ -100,7 +101,7 @@ curl -X POST "http://localhost:5000/api/contents/sync" -H "accept: */*" -d ""
 3. **MediatR Pipeline Behaviors** – Caching, validation, logging gibi işler handler içine gömülmedi; AOP mantığıyla ilerledim. Cross-cutting işlerin tek merkezden yönetilmesi kod tekrarını bitiriyor; decorator tabanlı alternatiflere göre daha okunabilir.
 4. **Polly (Retry + Bulkhead)** – Provider API’leri 500/timeout verdiğinde otomatik retry ve eşzamanlı istek limiti var. Polly .NET ekosistemine en iyi entegre resiliency kütüphanesi; custom retry mekanizması yazmaya göre çok daha güvenilir ve test edilebilir.
 5. **Hangfire** – Sync komutunu planlı çalıştırıp dashboard’dan takip edebilmek için.
-6. **Redis + ICacheService (Fallback: MemoryCache)** – Redis cache entegrasyonu yapıldı; Redis kapalıysa veya bağlanamazsa otomatik olarak MemoryCache'e fallback yapıyor. ICacheService interface'i sayesinde cache implementasyonu değişikliği tek konfigürasyonla yönetiliyor. Search için ElasticSearch kullanmak bu proje kapsamında overengineering olurdu; mevcut veri hacmi ve arama gereksinimleri için PostgreSQL'in full-text search özellikleri yeterli. ElasticSearch eklemek hem docker configlerinin karmaşıklaşmasına hem de development/değerlendirme süreçlerinde gereksiz yavaşlığa sebep olacaktır.
+6. **Redis + ICacheService (Fallback: MemoryCache)** – Redis cache entegrasyonu yapıldı; Redis kapalıysa veya bağlanamazsa otomatik olarak MemoryCache'e fallback yapıyor. Redis'i seçmemin sebebi, MemoryCache ram üzerinde çalışmaması.
 7. **AutoMapper & FluentValidation** – DTO/Entity dönüşümleri ve request kontrolleri tekrar eden kod yazdırmıyor.
 8. **Serilog (PostgreSQL sink)** – API ve job loglarını tek yerde topladım.
 9. **ASP.NET Core MVC + Bootstrap 5** – Dashboard’u ince istemci yaptım; sadece API tüketip tablo render ediyor. Ayrı bir react projesi yapmak daha mantıklı olurda fakat yine proje çok dallanacağı ve node paketleri devreye gireceği için basit işlevsen bir mvc yaptım.
