@@ -1,8 +1,7 @@
 using Core.CrossCuttingConcerns.Caching;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using System.Text;
 
 namespace Core.Application.Pipelines.Caching;
 
@@ -13,14 +12,19 @@ namespace Core.Application.Pipelines.Caching;
 public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>, ICacheableRequest
 {
-    // MemoryCacheManager yerine ICacheService inject ediyorum eğer redise çevirirsem burdaki kodda değişiklik yapmak durumunda kalmayacağım. loose coupling
+    // MemoryCacheManager yerine ICacheService inject ediyorum
     private readonly ICacheService _cacheService;
     private readonly IConfiguration _configuration;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public CachingBehavior(ICacheService cacheService, IConfiguration configuration)
+    public CachingBehavior(
+        ICacheService cacheService, 
+        IConfiguration configuration,
+        IHttpContextAccessor httpContextAccessor)
     {
         _cacheService = cacheService;
         _configuration = configuration;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
@@ -34,22 +38,27 @@ public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
         //hit
         if (_cacheService.IsAdd(request.CacheKey))
         {
-            // TODO: Loglama
+            SetCacheHeader("HIT");
             return _cacheService.Get<TResponse>(request.CacheKey);
         }
 
-        //miss execute business
         var response = await next();
-
-        // kullanılmayan veriler cacheden silinir sık kullananaların ömrü uzar Memory management için
-        TimeSpan? slidingExpiration = request.SlidingExpiration;
-        int cacheDuration = 10; //parametre tablosundan okunmalı
+        SetCacheHeader("MISS");
 
         if (response != null)
         {
-            _cacheService.Add(request.CacheKey, response, slidingExpiration ?? TimeSpan.FromMinutes(cacheDuration));
+            // TODO: Cache süresi parametrik hale getirilmeli
+            _cacheService.Add(request.CacheKey, response, request.SlidingExpiration ?? TimeSpan.FromMinutes(10));
         }
 
         return response;
+    }
+
+    private void SetCacheHeader(string status)
+    {
+        if (_httpContextAccessor.HttpContext?.Response != null)
+        {
+            _httpContextAccessor.HttpContext.Response.Headers["X-Cache"] = status;
+        }
     }
 }

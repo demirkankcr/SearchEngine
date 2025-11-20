@@ -1,3 +1,7 @@
+using Core.CrossCuttingConcerns.Caching;
+using Core.CrossCuttingConcerns.Caching.Microsoft;
+using Core.CrossCuttingConcerns.Caching.Redis;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
 using Polly.Bulkhead;
@@ -6,14 +10,13 @@ using SearchEngine.Application.Services.ContentProviders;
 using SearchEngine.Infrastructure.Persistence.Repositories;
 using SearchEngine.Infrastructure.Services.ContentProviders;
 using SearchEngine.Application.Services.Repositories;
-using Core.CrossCuttingConcerns.Caching;
-using Core.CrossCuttingConcerns.Caching.Microsoft;
+using StackExchange.Redis;
 
 namespace SearchEngine.Infrastructure;
 
 public static class InfrastructureServiceRegistration
 {
-    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         //kapsamlı bir projede bunları static tutmak doğru olmaz bir parameter tablosunda tutmak daha sağlıklı olur
         var retryPolicy = HttpPolicyExtensions
@@ -36,10 +39,46 @@ public static class InfrastructureServiceRegistration
 
         services.AddScoped<IContentRepository, ContentRepository>();
 
-        //caching
-        services.AddMemoryCache();
-        services.AddSingleton<ICacheService, MemoryCacheManager>();
+        ConfigureCaching(services, configuration);
 
         return services;
+    }
+
+    private static void ConfigureCaching(IServiceCollection services, IConfiguration configuration)
+    {
+        var redisSection = configuration.GetSection(RedisCacheOptions.SectionName);
+        var redisOptions = redisSection.Get<RedisCacheOptions>();
+
+        if (redisOptions is not null &&
+            redisOptions.Enabled &&
+            !string.IsNullOrWhiteSpace(redisOptions.ConnectionString))
+        {
+            services.Configure<RedisCacheOptions>(redisSection);
+            services.AddSingleton<IConnectionMultiplexer>(_ =>
+            {
+                var options = ConfigurationOptions.Parse(redisOptions.ConnectionString!, true);
+                options.AbortOnConnectFail = false;
+                options.AllowAdmin = redisOptions.AllowAdmin;
+
+                if (!string.IsNullOrWhiteSpace(redisOptions.InstanceName))
+                {
+                    options.ClientName = redisOptions.InstanceName;
+                }
+
+                if (redisOptions.DefaultDatabase.HasValue)
+                {
+                    options.DefaultDatabase = redisOptions.DefaultDatabase.Value;
+                }
+
+                return ConnectionMultiplexer.Connect(options);
+            });
+
+            services.AddSingleton<ICacheService, RedisCacheManager>();
+        }
+        else
+        {
+            services.AddMemoryCache();
+            services.AddSingleton<ICacheService, MemoryCacheManager>();
+        }
     }
 }
