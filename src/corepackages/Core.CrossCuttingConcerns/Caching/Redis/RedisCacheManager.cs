@@ -21,7 +21,7 @@ public class RedisCacheManager : ICacheService
         _options = optionsAccessor?.Value ?? throw new ArgumentNullException(nameof(optionsAccessor));
         var database = _options.DefaultDatabase ?? -1;
         _database = connectionMultiplexer.GetDatabase(database);
-        
+
         _jsonSettings = new JsonSerializerSettings
         {
             ContractResolver = new CamelCasePropertyNamesContractResolver(),

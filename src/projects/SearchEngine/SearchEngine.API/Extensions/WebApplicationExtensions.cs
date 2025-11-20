@@ -15,22 +15,22 @@ public static class WebApplicationExtensions
         {
             using var scope = app.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<BaseDbContext>();
-            
+
             var pendingMigrations = dbContext.Database.GetPendingMigrations().ToList();
             if (pendingMigrations.Any())
             {
-                Console.WriteLine($"🔄 [Database] Applying {pendingMigrations.Count} pending migration(s)...");
+                Console.WriteLine($"[Database] Applying {pendingMigrations.Count} pending migration(s)...");
                 dbContext.Database.Migrate();
-                Console.WriteLine("✅ [Database] Migrations applied successfully.");
+                Console.WriteLine("[Database] Migrations applied successfully.");
             }
             else
             {
-                Console.WriteLine("✅ [Database] Database is up to date.");
+                Console.WriteLine("[Database] Database is up to date.");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ [Database] Error applying migrations: {ex.Message}");
+            Console.WriteLine($"[Database] Error applying migrations: {ex.Message}");
             // Development ortamında hata fırlat, production'da logla ama devam et
             if (app.Environment.IsDevelopment())
             {
@@ -52,24 +52,24 @@ public static class WebApplicationExtensions
             {
                 if (redis.IsConnected)
                 {
-                    Console.WriteLine($"✅ [Redis] Connection Successful: {redis.Configuration}");
+                    Console.WriteLine($"[Redis] Connection Successful: {redis.Configuration}");
                     Console.WriteLine($"   - Client Name: {redis.ClientName}");
                     Console.WriteLine($"   - Status: {redis.GetStatus()}");
                 }
                 else
                 {
-                    Console.WriteLine($"❌ [Redis] Connection Failed: Multiplexer is registered but not connected.");
+                    Console.WriteLine($"[Redis] Connection Failed: Multiplexer is registered but not connected.");
                 }
             }
             else
             {
                 // Redis kapalıysa MemoryCache kullanılıyor demektir.
-                Console.WriteLine("ℹ️ [Cache] Redis is disabled or not configured. Using MemoryCache.");
+                Console.WriteLine("[Cache] Redis is disabled or not configured. Using MemoryCache.");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ [Redis] Error checking connection: {ex.Message}");
+            Console.WriteLine($"[Redis] Error checking connection: {ex.Message}");
         }
     }
 

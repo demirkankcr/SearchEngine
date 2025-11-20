@@ -18,7 +18,7 @@ public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public CachingBehavior(
-        ICacheService cacheService, 
+        ICacheService cacheService,
         IConfiguration configuration,
         IHttpContextAccessor httpContextAccessor)
     {
@@ -39,7 +39,8 @@ public class CachingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
         if (_cacheService.IsAdd(request.CacheKey))
         {
             SetCacheHeader("HIT");
-            return _cacheService.Get<TResponse>(request.CacheKey);
+            var cachedData = _cacheService.Get<TResponse>(request.CacheKey);
+            return cachedData!;
         }
 
         var response = await next();

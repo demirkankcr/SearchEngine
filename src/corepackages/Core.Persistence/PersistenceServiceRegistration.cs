@@ -17,11 +17,11 @@ public static class PersistenceServiceRegistration
             options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly("Core.Persistence");
-                
+
                 // Docker ortamında veya geçici ağ hatalarında DB bağlantısının kopmaması için Retry mekanizması
                 npgsqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 5, 
-                    maxRetryDelay: TimeSpan.FromSeconds(30), 
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
                     errorCodesToAdd: null
                 );
             });
