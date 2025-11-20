@@ -39,18 +39,18 @@ public class SyncContentCommandHandler : IRequestHandler<SyncContentCommand, boo
             try
             {
                 var contents = await provider.GetContentsAsync(cancellationToken);
-                
+
                 if (!contents.Any()) continue;
 
                 // --- PERFORMANCE OPTIMIZATION START ---
                 // Yeni Yöntem (Batch Processing): Provider'dan gelen tüm ID'leri alıp, DB'den tek seferde soruyoruz.
-                
+
                 var sourceName = contents.First().Source;
                 var providerIds = contents.Select(c => c.ProviderId).ToList();
 
                 // DB'ye tek sefer gidip, bu ID'lere sahip olan kayıtları getiriyoruz.
                 var existingContents = await _contentRepository.GetListByProviderIdsAsync(sourceName, providerIds);
-                
+
                 // Karşılaştırma için Dictionary'e çeviriyoruz (O(1) lookup hızı için).
                 var existingContentsDict = existingContents.ToDictionary(c => c.ProviderId);
 
@@ -64,22 +64,18 @@ public class SyncContentCommandHandler : IRequestHandler<SyncContentCommand, boo
 
                     if (existingContentsDict.TryGetValue(content.ProviderId, out var existingContent))
                     {
-                        //Update
                         UpdateContent(existingContent, content);
                         contentsToUpdate.Add(existingContent);
                     }
                     else
                     {
-                        //Insert
                         contentsToAdd.Add(content);
                     }
                 }
-
-                // Bulk Ops
-                if (contentsToAdd.Any()) 
+                if (contentsToAdd.Any())
                     await _contentRepository.AddRangeAsync(contentsToAdd);
-                
-                if (contentsToUpdate.Any()) 
+
+                if (contentsToUpdate.Any())
                     await _contentRepository.UpdateRangeAsync(contentsToUpdate);
             }
             catch (Exception ex)

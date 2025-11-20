@@ -15,7 +15,7 @@ public class ContentSyncJob
 
     // Job 10 dakika sürerse bile ikinci job tetiklenmeyecek.
     // timeoutInSeconds: 0 -> kitlendiyse pas geçer
-    [DisableConcurrentExecution(timeoutInSeconds: 0)] 
+    [DisableConcurrentExecution(timeoutInSeconds: 0)]
     public async Task ExecuteAsync()
     {
         await _mediator.Send(new SyncContentCommand());

@@ -19,7 +19,7 @@ public class JsonContentProvider : IContentProvider
     public async Task<List<Content>> GetContentsAsync(CancellationToken cancellationToken)
     {
         var response = await _httpClient.GetFromJsonAsync<JsonContentResponse>(PROVIDER_URL, cancellationToken);
-        
+
         if (response?.Contents == null) return new List<Content>();
 
         var contents = new List<Content>();
@@ -27,7 +27,7 @@ public class JsonContentProvider : IContentProvider
         foreach (var item in response.Contents)
         {
             Content content;
-            
+
             // content type'a göre video yada text oluşyur
             if (item.Type.ToLower() == "video")
             {
@@ -47,8 +47,8 @@ public class JsonContentProvider : IContentProvider
             else
             {
                 //mock verinin tamamı video fakkat garanti olması amaçlı text case
-                content = new TextContent 
-                { 
+                content = new TextContent
+                {
                     Title = item.Title,
                     ProviderId = item.Id,
                     Source = "JsonProvider",

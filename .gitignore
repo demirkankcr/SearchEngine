@@ -366,3 +366,4 @@ FodyWeavers.xsd
 appsettings.json
 appsettings.*.json
 !appsettings.json.example
+/src/projects/SearchEngine/SearchEngine.UI/wwwroot

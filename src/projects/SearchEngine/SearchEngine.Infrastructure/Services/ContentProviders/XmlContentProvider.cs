@@ -19,7 +19,7 @@ public class XmlContentProvider : IContentProvider
     public async Task<List<Content>> GetContentsAsync(CancellationToken cancellationToken)
     {
         var responseStream = await _httpClient.GetStreamAsync(PROVIDER_URL, cancellationToken);
-        
+
         var serializer = new XmlSerializer(typeof(XmlContentResponse));
         var response = (XmlContentResponse?)serializer.Deserialize(responseStream);
 

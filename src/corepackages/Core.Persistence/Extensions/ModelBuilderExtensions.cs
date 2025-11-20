@@ -8,15 +8,15 @@ public static class ModelBuilderExtensions
     public static void RegisterAllEntities<BaseType>(this ModelBuilder modelBuilder, Assembly assembly)
     {
         var baseTypeDefinition = typeof(BaseType);
-        var baseGenericTypeDefinition = baseTypeDefinition.IsGenericType 
-            ? baseTypeDefinition.GetGenericTypeDefinition() 
+        var baseGenericTypeDefinition = baseTypeDefinition.IsGenericType
+            ? baseTypeDefinition.GetGenericTypeDefinition()
             : null;
 
         var types = assembly.GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract && 
-                t.BaseType != null && 
-                t.BaseType.IsGenericType && 
-                (baseGenericTypeDefinition != null 
+            .Where(t => t.IsClass && !t.IsAbstract &&
+                t.BaseType != null &&
+                t.BaseType.IsGenericType &&
+                (baseGenericTypeDefinition != null
                     ? t.BaseType.GetGenericTypeDefinition() == baseGenericTypeDefinition
                     : typeof(BaseType).IsAssignableFrom(t)));
 
