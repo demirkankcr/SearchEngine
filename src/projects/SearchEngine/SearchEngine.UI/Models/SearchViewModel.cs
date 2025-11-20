@@ -31,6 +31,7 @@ public class SearchContentViewModel
     public ContentType ContentType { get; set; }
     public string ProviderName { get; set; } = string.Empty;
     public double Score { get; set; }
+    public double PopularityScore { get; set; }
     public DateTime PublishedDate { get; set; }
     public string? Duration { get; set; }
     public int? ReadingTime { get; set; }

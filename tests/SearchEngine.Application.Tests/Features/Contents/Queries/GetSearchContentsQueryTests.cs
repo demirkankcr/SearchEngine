@@ -81,6 +81,7 @@ public class GetSearchContentsQueryTests
 
         _mockRepository.Setup(r => r.GetListByDynamicAsync(
             It.Is<DynamicQuery>(dq =>
+                !string.IsNullOrEmpty(dq.Filter) &&
                 dq.Filter.Contains("Title.ToLower().Contains(\"test\")") &&
                 dq.Filter.Contains("ContentType == 1")
             ),
@@ -140,5 +141,42 @@ public class GetSearchContentsQueryTests
         Assert.Equal(50, result.Count); // Metadata check
         Assert.Equal(0, result.Index);
         Assert.Equal(10, result.Size);
+    }
+
+    [Theory]
+    [InlineData(null, "Score descending")]
+    [InlineData("relevancedesc", "Score descending")]
+    [InlineData("relevanceasc", "Score ascending")]
+    [InlineData("popularitydesc", "InteractionScore descending")]
+    [InlineData("popularityasc", "InteractionScore ascending")]
+    [InlineData("datedesc", "PublishedDate descending")]
+    [InlineData("dateasc", "PublishedDate ascending")]
+    [InlineData("scoredesc", "Score descending")]
+    [InlineData("scoreasc", "Score ascending")]
+    public async Task Handle_ShouldApplySortExpression_WhenSortByProvided(string? sortBy, string expectedSort)
+    {
+        // Arrange
+        var query = new GetSearchContentsQuery { SortBy = sortBy };
+        var emptyPaginate = new Paginate<Content>(new List<Content>(), 0, 10, 0);
+
+        _mockRepository.Setup(r => r.GetListByDynamicAsync(
+            It.Is<DynamicQuery>(dq => dq.Sort == expectedSort),
+            It.IsAny<Expression<Func<Content, bool>>>(),
+            It.IsAny<Func<IQueryable<Content>, IIncludableQueryable<Content, object>>>(),
+            It.IsAny<int>(),
+            It.IsAny<int>(),
+            false,
+            true,
+            It.IsAny<CancellationToken>()
+        )).ReturnsAsync(emptyPaginate);
+
+        _mockMapper.Setup(m => m.Map<IList<SearchContentDto>>(It.IsAny<IList<Content>>()))
+                   .Returns(new List<SearchContentDto>());
+
+        // Act
+        await _handler.Handle(query, CancellationToken.None);
+
+        // Assert
+        _mockRepository.VerifyAll();
     }
 }

@@ -107,16 +107,26 @@ public class GetSearchContentsQueryHandler : IRequestHandler<GetSearchContentsQu
         return filters.Count == 0 ? null : string.Join(" && ", filters);
     }
 
+    private static readonly IReadOnlyDictionary<string, string> SortMap = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase)
+    {
+        { "scoreasc", "Score ascending" },
+        { "scoredesc", "Score descending" },
+        { "relevanceasc", "Score ascending" },
+        { "relevancedesc", "Score descending" },
+        { "datedesc", "PublishedDate descending" },
+        { "dateasc", "PublishedDate ascending" },
+        { "popularitydesc", "InteractionScore descending" },
+        { "popularityasc", "InteractionScore ascending" }
+    };
+
     private static string ResolveSortExpression(string? sortBy)
     {
-        return sortBy?.ToLower(CultureInfo.InvariantCulture) switch
+        if (!string.IsNullOrWhiteSpace(sortBy) && SortMap.TryGetValue(sortBy, out var mappedSort))
         {
-            "scoreasc" => "Score ascending",
-            "scoredesc" => "Score descending",
-            "datedesc" => "PublishedDate descending",
-            "dateasc" => "PublishedDate ascending",
-            _ => "Score descending"
-        };
+            return mappedSort;
+        }
+
+        return "Score descending";
     }
 
     private static string SanitizeLiteral(string value)

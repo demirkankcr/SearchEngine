@@ -1,6 +1,45 @@
 @model SearchEngine.UI.Models.SearchViewModel
 @{
     Layout = null; // Layout dosyasını iptal ediyoruz, her şey burada.
+    var currentSort = (Model.SortBy ?? "relevancedesc").ToLowerInvariant();
+
+    string GetSortDirection(string key)
+    {
+        if (currentSort.StartsWith(key))
+        {
+            return currentSort.EndsWith("asc") ? "asc" : "desc";
+        }
+
+        return "none";
+    }
+
+    string GetNextSortValue(string key)
+    {
+        return GetSortDirection(key) == "asc" ? $"{key}desc" : $"{key}asc";
+    }
+
+    string BuildSortUrl(string key)
+    {
+        var nextSort = GetNextSortValue(key);
+        return Url.Action("Index", new
+        {
+            keyword = Model.Keyword,
+            contentType = Model.ContentType,
+            pageIndex = 0,
+            pageSize = Model.PageSize,
+            sortBy = nextSort
+        }) ?? "#";
+    }
+
+    string GetSortIcon(string key)
+    {
+        return GetSortDirection(key) switch
+        {
+            "asc" => "bi bi-arrow-up-short ms-1",
+            "desc" => "bi bi-arrow-down-short ms-1",
+            _ => "bi bi-arrow-down-up ms-1 text-muted"
+        };
+    }
 }
 
 <!DOCTYPE html>
@@ -62,12 +101,12 @@
         <!-- Search Box -->
         <div class="search-card p-4 mb-5">
             <form method="get" asp-action="Index">
-                <div class="row g-3">
-                    <div class="col-md-5">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-6 col-xl-5">
                         <label class="form-label small text-muted fw-bold">KEYWORD</label>
                         <input type="text" name="keyword" class="form-control form-control-lg bg-light border-0" placeholder="Search titles..." value="@Model.Keyword">
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-12 col-md-6 col-xl-3">
                         <label class="form-label small text-muted fw-bold">TYPE</label>
                         <select name="contentType" class="form-select form-select-lg bg-light border-0">
                             <option value="" selected="@(string.IsNullOrEmpty(Model.ContentType))">All</option>
@@ -75,14 +114,15 @@
                             <option value="Text" selected="@(Model.ContentType == "Text")">Text</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-12 col-md-6 col-xl-2">
                          <label class="form-label small text-muted fw-bold">SIZE</label>
                          <input type="number" name="pageSize" class="form-control form-control-lg bg-light border-0" value="@Model.PageSize" min="5" max="50">
                     </div>
-                    <div class="col-md-2 d-flex align-items-end">
+                    <div class="col-12 col-md-6 col-xl-2 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary btn-lg w-100 border-0" style="background-color: #228be6;">Search</button>
                     </div>
                 </div>
+                <input type="hidden" name="sortBy" value="@(Model.SortBy ?? "relevancedesc")" />
             </form>
         </div>
 
@@ -99,9 +139,20 @@
             <table class="table mb-0">
                 <thead>
                     <tr>
-                        <th style="width: 60%;">Title</th>
-                        <th style="width: 20%;">Type</th>
-                        <th style="width: 20%;">Score</th>
+                        <th style="width: 50%;">Title</th>
+                        <th style="width: 15%;">Type</th>
+                        <th style="width: 17%;">
+                            <a class="text-decoration-none text-muted d-inline-flex align-items-center" href='@BuildSortUrl("relevance")'>
+                                <span>Relevance</span>
+                                <i class='@GetSortIcon("relevance")'></i>
+                            </a>
+                        </th>
+                        <th style="width: 18%;">
+                            <a class="text-decoration-none text-muted d-inline-flex align-items-center" href='@BuildSortUrl("popularity")'>
+                                <span>Popularity</span>
+                                <i class='@GetSortIcon("popularity")'></i>
+                            </a>
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -131,13 +182,21 @@
                                         </div>
                                     </div>
                                 </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="score-text me-3" style="color: #f08c00;">@item.PopularityScore.ToString("0.0")</span>
+                                        <div class="progress flex-grow-1" style="height: 4px; background-color: #e9ecef;">
+                                            <div class="progress-bar" style="width: @Math.Min(item.PopularityScore, 100)%; background-color: #f08c00;"></div>
+                                        </div>
+                                    </div>
+                                </td>
                             </tr>
                         }
                     }
                     else
                     {
                         <tr>
-                            <td colspan="3" class="text-center py-5 text-muted">
+                            <td colspan="4" class="text-center py-5 text-muted">
                                 <i class="bi bi-inbox display-4 mb-3 d-block opacity-25"></i>
                                 No results found
                             </td>
@@ -156,7 +215,7 @@
                     <nav aria-label="Pagination">
                         <ul class="pagination pagination-sm mb-0">
                             <li class="page-item @(Model.PageIndex == 0 ? "disabled" : "")">
-                                <a class="page-link" href="@Url.Action("Index", new { pageIndex = Math.Max(0, Model.PageIndex - 1), keyword = Model.Keyword, contentType = Model.ContentType, pageSize = Model.PageSize })">
+                                <a class="page-link" href="@Url.Action("Index", new { pageIndex = Math.Max(0, Model.PageIndex - 1), keyword = Model.Keyword, contentType = Model.ContentType, pageSize = Model.PageSize, sortBy = Model.SortBy })">
                                     Prev
                                 </a>
                             </li>
@@ -167,7 +226,7 @@
                             @if (start > 0)
                             {
                                 <li class="page-item">
-                                    <a class="page-link" href="@Url.Action("Index", new { pageIndex = 0, keyword = Model.Keyword, contentType = Model.ContentType, pageSize = Model.PageSize })">1</a>
+                                    <a class="page-link" href="@Url.Action("Index", new { pageIndex = 0, keyword = Model.Keyword, contentType = Model.ContentType, pageSize = Model.PageSize, sortBy = Model.SortBy })">1</a>
                                 </li>
                                 if (start > 1)
                                 {
@@ -177,7 +236,7 @@
                             @for (var i = start; i <= end; i++)
                             {
                                 <li class="page-item @(i == Model.PageIndex ? "active" : "")">
-                                    <a class="page-link" href="@Url.Action("Index", new { pageIndex = i, keyword = Model.Keyword, contentType = Model.ContentType, pageSize = Model.PageSize })">
+                                    <a class="page-link" href="@Url.Action("Index", new { pageIndex = i, keyword = Model.Keyword, contentType = Model.ContentType, pageSize = Model.PageSize, sortBy = Model.SortBy })">
                                         @(i + 1)
                                     </a>
                                 </li>
@@ -189,11 +248,11 @@
                                     <li class="page-item disabled"><span class="page-link">...</span></li>
                                 }
                                 <li class="page-item">
-                                    <a class="page-link" href="@Url.Action("Index", new { pageIndex = Model.TotalPages - 1, keyword = Model.Keyword, contentType = Model.ContentType, pageSize = Model.PageSize })">@Model.TotalPages</a>
+                                    <a class="page-link" href="@Url.Action("Index", new { pageIndex = Model.TotalPages - 1, keyword = Model.Keyword, contentType = Model.ContentType, pageSize = Model.PageSize, sortBy = Model.SortBy })">@Model.TotalPages</a>
                                 </li>
                             }
                             <li class="page-item @(Model.PageIndex >= Model.TotalPages - 1 ? "disabled" : "")">
-                                <a class="page-link" href="@Url.Action("Index", new { pageIndex = Math.Min(Model.TotalPages - 1, Model.PageIndex + 1), keyword = Model.Keyword, contentType = Model.ContentType, pageSize = Model.PageSize })">
+                                <a class="page-link" href="@Url.Action("Index", new { pageIndex = Math.Min(Model.TotalPages - 1, Model.PageIndex + 1), keyword = Model.Keyword, contentType = Model.ContentType, pageSize = Model.PageSize, sortBy = Model.SortBy })">
                                     Next
                                 </a>
                             </li>

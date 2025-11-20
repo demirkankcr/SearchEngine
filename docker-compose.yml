@@ -1,0 +1,131 @@
+services:
+  # PostgreSQL Database
+  # Verilerin kalıcı olması için volume mapping yapıldı
+  db:
+    image: postgres:16-alpine
+    container_name: search-engine-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: SearchEngineDb
+    ports:
+      - "5433:5432" # Host portunu 5433 yaptık (çakışma önlemek için)
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - search-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  # Caching ve Rate Limiting için kullanılır
+  redis:
+    image: redis:7-alpine
+    container_name: search-engine-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - search-network
+    # appendonly yes ile verilerin diske yazılmasını sağlıyoruz, container restart olsa bile cache silinmez (opsiyonel)
+    command: ["redis-server", "--appendonly", "yes"] 
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Commander
+  # Redis verilerini görselleştirmek için
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: search-engine-redis-commander
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - search-network
+
+  # ElasticSearch
+  # Gelişmiş metin arama ve filtreleme için
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.2
+    container_name: search-engine-elastic
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # JVM heap size kısıtlaması local development için önemli
+    ports:
+      - "9200:9200"
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+    networks:
+      - search-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Search Engine API
+  api:
+    build:
+      context: .
+      dockerfile: src/projects/SearchEngine/SearchEngine.API/Dockerfile
+    container_name: search-engine-api
+    environment:
+      # Docker service name (db) kullanılarak bağlantı sağlanır
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=SearchEngineDb;Username=postgres;Password=postgrespassword
+      - Redis__Enabled=true
+      - Redis__ConnectionString=redis:6379
+      - Redis__InstanceName=SearchEngine
+      - Redis__KeyPrefix=search-app
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+    ports:
+      - "5000:80"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - search-network
+
+  # Dashboard UI
+  ui:
+    build:
+      context: .
+      dockerfile: src/projects/SearchEngine/SearchEngine.UI/Dockerfile
+    container_name: search-engine-ui
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+      # UI API'ye 'api' service name üzerinden değil, client-side çağrılar için localhost üzerinden erişir
+      # Eğer server-side call varsa http://api, client-side ise http://localhost:5000
+      # Buradaki senaryoda varsayılan olarak server-side config örneği:
+      - ApiSettings__BaseUrl=http://api
+    ports:
+      - "5001:80"
+    depends_on:
+      - api
+    networks:
+      - search-network
+
+networks:
+  search-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  elastic_data:

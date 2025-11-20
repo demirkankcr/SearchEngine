@@ -16,6 +16,7 @@ public class SearchContentDto
 
     // sadec score yeterli alt kırımları kaldırdım
     public double Score { get; set; }
+    public double PopularityScore { get; set; }
     public ContentType ContentType { get; set; }
 
     // Interactions
